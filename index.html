@@ -1,0 +1,176 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <title>Geo-stationary calculator</title>
+        <style type="text/css">
+          html {
+            height: 100%;
+          }
+
+          body {
+            margin: 0;
+            padding: 0;
+            background: #000000 url(loading.gif) center center no-repeat;
+            color: #ffffff;
+            font-family: sans-serif;
+            font-size: 13px;
+            line-height: 20px;
+            height: 100%;
+          }
+
+          .form {
+            position: fixed;
+            z-index: 100;
+            display: table;
+
+          }
+
+          #container {
+            position: absolute;
+            z-index: 50;
+          }
+          label {
+            display: table-row;
+          }
+          input {
+            display: table-row;
+          }
+          .azel{
+            position: fixed;
+            display: table-row;
+            z-index: 100;
+          }
+          button{
+            z-index: 100;
+          }
+          #notes{
+            width: 20%;
+          }
+        </style>
+    </head>
+    <body onload="StartGlobe()">
+      <div class="azel">
+        <h1 id="azelresults">Pending value submission</h1>
+      <div class="form">
+        <label for="TermLat">Terminal Latitude:</label>
+        <input type="text" id="TermLat" name="TermLat">
+        <label for="TermLong">Terminal longitude:</label>
+        <input type="text" id="TermLong" name="TermLong">
+        <label for="SatLong">Satellite Latitude:</label>
+        <input type="text" id="SatLong" name="SatLong">
+        <label for="declination">Magnetic declination:</label>
+        <input type="text" id="declination" name="declination">
+        <p>Magnetic declination is known:<input type="checkbox" id="declinationIsKnown" name="declinationIsKnown"></p>
+        <script>
+          function calcazel() {
+          var TermLat = parseInt(document.getElementById("TermLat").value);
+          var TermLong = document.getElementById("TermLong").value;
+          var SatLong = document.getElementById("SatLong").value;
+          var declination = document.getElementById("declination").value;
+          var IsWest = false;
+          var CalcAz;
+          var CalcEl;
+          var MagAz;
+
+  pi = 22 / (7 * 180);
+  m = 1.0 * TermLong;
+  n = 1.0 * TermLat;
+  o = 1.0 * SatLong;
+  declination = declination * 1.0;
+  if (TermLong < 0){
+    IsWest = true;
+  }
+  else {
+    IsWest = false;
+  }
+  B = TermLong - SatLong;
+  x = Math.abs(B);
+  A = (-1.0 * Math.tan(x * pi)) / Math.sin(TermLat * pi);
+  y = Math.atan(A) / pi;
+var p = 10;
+  if (TermLat < 0 && B < 0) {
+    p = y;
+  }
+  if (TermLat < 0 && B > 0){
+     p = 360 - 1.0 * y;
+  }
+  if (TermLat > 0 && B < 0){
+    p = 180 + 1.0 * y;
+  }
+  if (TermLat > 0 && B > 0) {
+    p = 180 - 1.0 * y;
+  }
+  CalcAz = Math.round(p * 100) / 100;
+  c = Math.cos(TermLat * pi) * Math.cos(B * pi);
+  a = Math.sin(TermLat * pi);
+  l = 1 - Math.pow(a, 2) / 298.257;
+  R = 6378.14 * l;
+  D = Math.sqrt(R * R + 42164.14 * 42164.14 - 2 * c * 42164.14 * R);
+  C = Math.acos(c) / pi;
+  ei = (42164.14 / D) * Math.sin(C * pi);
+  EI = Math.acos(ei) / pi;
+  CalcEl = Math.round(EI * 100) / 100;
+  if (IsWest == true && document.getElementById("declinationIsKnown").checked == true){
+    MagAz = CalcAz - declination;
+    document.getElementById("azelresults").innerHTML = "True North Azimuth: "+CalcAz+" Magnetic Azimuth is:"+MagAz+" Elevation is: "+CalcEl;
+  }
+  if (IsWest == false && document.getElementById("declinationIsKnown").checked == true) {
+    MagAz = CalcAz + declination;
+    document.getElementById("azelresults").innerHTML = "True North Azimuth: "+CalcAz+" Magnetic Azimuth is:"+MagAz+" Elevation is: "+CalcEl;
+  }
+  if (document.getElementById("declinationIsKnown").checked == false){
+  document.getElementById("azelresults").innerHTML = "True North Azimuth: "+CalcAz+" Elevation is: "+CalcEl;
+  }
+  StartGlobe(TermLat, TermLong, SatLong);
+}
+
+function showHideNotes(){
+  var x = document.getElementById("notes");
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+}
+        </script>
+        <button type="button" onclick="calcazel()">Calculate</button>
+        <button type="button" onclick="showHideNotes()">Show/Hide notes</button>
+        <h4 id="notes">NOTES: Same origin policy must be disabled if running using "file://" or globe will not render. In firefox go to about:config and set "security.fileuri.strict_origin_policy" to false. <br ><br >When entering values North latitude is positive and South latitude is negative. Similarly West longitude is negative and East longitude is positive.<br ><br > If the magnetic declination is unknown you will need to convert the true north azimuth to compass/magnetic to do this, add or subtract the magnetic declination(add for east hemisphere and subtract for western hemisphere). To find your magnetic value go to: https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml and input latitude and longitude or view common-magnetic-declination-values.txt</h4>
+      </div>
+    </div>
+        <div id="container"></div>
+        <script src="./third-party/Detector.js"></script>
+        <script src="./third-party/three.min.js"></script>
+        <script src="./globe.js"></script>
+        <script>
+          function StartGlobe(TermLat, TermLong, SatLong){
+            //TermLat = TermLat * 1;
+            //TermLong = TermLong * 1;
+            //lat, long, z aka height, color
+          var GeoDistance = 5.6;
+          var formData = [TermLat, TermLong, 0, 1, 0, SatLong, 5.60001, 0, 0, -180, GeoDistance, 2, 0, 0, GeoDistance, 2, 0, -1, GeoDistance, 2, 0, -3, GeoDistance, 2, 0, -4, GeoDistance, 2, 0, -5, GeoDistance, 2, 0, -7, GeoDistance, 2, 0, -8, GeoDistance, 2, 0, -11, GeoDistance, 2, 0, -12, GeoDistance, 2, 0, -14, GeoDistance, 2, 0, -15, GeoDistance, 2, 0, -16, GeoDistance, 2, 0, -18, GeoDistance, 2, 0, -20, GeoDistance, 2, 0, -21, GeoDistance, 2, 0, -22, GeoDistance, 2, 0, -24, GeoDistance, 2, 0, -27, GeoDistance, 2, 0, -29, GeoDistance, 2, 0, -30, GeoDistance, 2, 0, -31, GeoDistance, 2, 0, -33, GeoDistance, 2, 0, -34, GeoDistance, 2, 0, -36, GeoDistance, 2, 0, -37, GeoDistance, 2, 0, -40, GeoDistance, 2, 0, -43, GeoDistance, 2, 0, -44, GeoDistance, 2, 0, -45, GeoDistance, 2, 0, -47, GeoDistance, 2, 0, -50, GeoDistance, 2, 0, -52, GeoDistance, 2, 0, -53, GeoDistance, 2, 0, -54, GeoDistance, 2, 0, -55, GeoDistance, 2, 0, -58, GeoDistance, 2, 0, -61, GeoDistance, 2, 0, -62, GeoDistance, 2, 0, -63, GeoDistance, 2, 0, -64, GeoDistance, 2, 0, -65, GeoDistance, 2, 0, -67, GeoDistance, 2, 0, -68, GeoDistance, 2, 0, -69, GeoDistance, 2, 0, -70, GeoDistance, 2, 0, -71, GeoDistance, 2, 0, -72, GeoDistance, 2, 0, -73, GeoDistance, 2, 0, -74, GeoDistance, 2, 0, -75, GeoDistance, 2, 0, -76, GeoDistance, 2, 0, -77, GeoDistance, 2, 0, -78, GeoDistance, 2, 0, -79, GeoDistance, 2, 0, -81, GeoDistance, 2, 0, -82, GeoDistance, 2, 0, -83, GeoDistance, 2, 0, -84, GeoDistance, 2, 0, -85, GeoDistance, 2, 0, -86, GeoDistance, 2, 0, -87, GeoDistance, 2, 0, -88, GeoDistance, 2, 0, -89, GeoDistance, 2, 0, -91, GeoDistance, 2, 0, -92, GeoDistance, 2, 0, -93, GeoDistance, 2, 0, -94, GeoDistance, 2, 0, -95, GeoDistance, 2, 0, -96, GeoDistance, 2, 0, -97, GeoDistance, 2, 0, -98, GeoDistance, 2, 0, -99, GeoDistance, 2, 0, -100, GeoDistance, 2, 0, -101, GeoDistance, 2, 0, -102, GeoDistance, 2, 0, -103, GeoDistance, 2, 0, -104, GeoDistance, 2, 0, -105, GeoDistance, 2, 0, -106, GeoDistance, 2, 0, -107, GeoDistance, 2, 0, -108, GeoDistance, 2, 0, -109, GeoDistance, 2, 0, -110, GeoDistance, 2, 0, -111, GeoDistance, 2, 0, -113, GeoDistance, 2, 0, -114, GeoDistance, 2, 0, -115, GeoDistance, 2, 0, -116, GeoDistance, 2, 0, -118, GeoDistance, 2, 0, -119, GeoDistance, 2, 0, -121, GeoDistance, 2, 0, -122, GeoDistance, 2, 0, -123, GeoDistance, 2, 0, -124, GeoDistance, 2, 0, -125, GeoDistance, 2, 0, -126, GeoDistance, 2, 0, -127, GeoDistance, 2, 0, -128, GeoDistance, 2, 0, -130, GeoDistance, 2, 0, -131, GeoDistance, 2, 0, -133, GeoDistance, 2, 0, -134, GeoDistance, 2, 0, -135, GeoDistance, 2, 0, -136, GeoDistance, 2, 0, -139, GeoDistance, 2, 0, -148, GeoDistance, 2, 0, -149, GeoDistance, 2, 0, -150, GeoDistance, 2, 0, -156, GeoDistance, 2, 0, -167, GeoDistance, 2, 0, -169, GeoDistance, 2, 0, -171, GeoDistance, 2, 0, -177, GeoDistance, 2, 0, -180, GeoDistance, 2, 0, 1, GeoDistance, 2, 0, 2, GeoDistance, 2, 0, 3, GeoDistance, 2, 0, 4, GeoDistance, 2, 0, 5, GeoDistance, 2, 0, 6, GeoDistance, 2, 0, 7, GeoDistance, 2, 0, 9, GeoDistance, 2, 0, 10, GeoDistance, 2, 0, 11, GeoDistance, 2, 0, 12, GeoDistance, 2, 0, 13, GeoDistance, 2, 0, 16, GeoDistance, 2, 0, 19, GeoDistance, 2, 0, 20, GeoDistance, 2, 0, 21, GeoDistance, 2, 0, 23, GeoDistance, 2, 0, 25, GeoDistance, 2, 0, 26, GeoDistance, 2, 0, 28, GeoDistance, 2, 0, 29, GeoDistance, 2, 0, 30, GeoDistance, 2, 0, 31, GeoDistance, 2, 0, 32, GeoDistance, 2, 0, 33, GeoDistance, 2, 0, 35, GeoDistance, 2, 0, 36, GeoDistance, 2, 0, 38, GeoDistance, 2, 0, 39, GeoDistance, 2, 0, 40, GeoDistance, 2, 0, 42, GeoDistance, 2, 0, 43, GeoDistance, 2, 0, 44, GeoDistance, 2, 0, 45, GeoDistance, 2, 0, 46, GeoDistance, 2, 0, 47, GeoDistance, 2, 0, 48, GeoDistance, 2, 0, 49, GeoDistance, 2, 0, 50, GeoDistance, 2, 0, 51, GeoDistance, 2, 0, 52, GeoDistance, 2, 0, 53, GeoDistance, 2, 0, 55, GeoDistance, 2, 0, 56, GeoDistance, 2, 0, 57, GeoDistance, 2, 0, 58, GeoDistance, 2, 0, 60, GeoDistance, 2, 0, 62, GeoDistance, 2, 0, 63, GeoDistance, 2, 0, 64, GeoDistance, 2, 0, 65, GeoDistance, 2, 0, 66, GeoDistance, 2, 0, 68, GeoDistance, 2, 0, 70, GeoDistance, 2, 0, 72, GeoDistance, 2, 0, 73, GeoDistance, 2, 0, 74, GeoDistance, 2, 0, 75, GeoDistance, 2, 0, 76, GeoDistance, 2, 0, 77, GeoDistance, 2, 0, 78, GeoDistance, 2, 0, 79, GeoDistance, 2, 0, 80, GeoDistance, 2, 0, 81, GeoDistance, 2, 0, 82, GeoDistance, 2, 0, 83, GeoDistance, 2, 0, 84, GeoDistance, 2, 0, 85, GeoDistance, 2, 0, 86, GeoDistance, 2, 0, 87, GeoDistance, 2, 0, 88, GeoDistance, 2, 0, 90, GeoDistance, 2, 0, 91, GeoDistance, 2, 0, 92, GeoDistance, 2, 0, 93, GeoDistance, 2, 0, 95, GeoDistance, 2, 0, 96, GeoDistance, 2, 0, 98, GeoDistance, 2, 0, 100, GeoDistance, 2, 0, 101, GeoDistance, 2, 0, 103, GeoDistance, 2, 0, 104, GeoDistance, 2, 0, 105, GeoDistance, 2, 0, 107, GeoDistance, 2, 0, 108, GeoDistance, 2, 0, 109, GeoDistance, 2, 0, 110, GeoDistance, 2, 0, 111, GeoDistance, 2, 0, 113, GeoDistance, 2, 0, 115, GeoDistance, 2, 0, 116, GeoDistance, 2, 0, 117, GeoDistance, 2, 0, 118, GeoDistance, 2, 0, 119, GeoDistance, 2, 0, 120, GeoDistance, 2, 0, 122, GeoDistance, 2, 0, 123, GeoDistance, 2, 0, 124, GeoDistance, 2, 0, 127, GeoDistance, 2, 0, 128, GeoDistance, 2, 0, 131, GeoDistance, 2, 0, 132, GeoDistance, 2, 0, 134, GeoDistance, 2, 0, 135, GeoDistance, 2, 0, 138, GeoDistance, 2, 0, 140, GeoDistance, 2, 0, 142, GeoDistance, 2, 0, 143, GeoDistance, 2, 0, 145, GeoDistance, 2, 0, 146, GeoDistance, 2, 0, 148, GeoDistance, 2, 0, 150, GeoDistance, 2, 0, 152, GeoDistance, 2, 0, 154, GeoDistance, 2, 0, 155, GeoDistance, 2, 0, 156, GeoDistance, 2, 0, 158, GeoDistance, 2, 0, 159, GeoDistance, 2, 0, 160, GeoDistance, 2, 0, 162, GeoDistance, 2, 0, 164, GeoDistance, 2, 0, 166, GeoDistance, 2, 0, 169, GeoDistance, 2, 0, 172, GeoDistance, 2, 0, 176, GeoDistance, 2, 0, 178, GeoDistance, 2, 0, 180, GeoDistance, 2]
+          //var formData = [TermLat,TermLong,0,1,SatLong,0,GeoDistance,0]
+          var globe = DAT.Globe(document.getElementById('container'), function(label) {
+            return new THREE.Color([0x34cb57, 0x002aff, 0xdb0b00][label]); //green blue red
+          });
+
+          //xhr = new XMLHttpRequest();
+          //xhr.open('GET', './sat-pos.json', true);
+          //xhr.onreadystatechange = function(e) {
+            //if (xhr.readyState === 4) {
+              //if (xhr.status === 200) {
+                //var data = JSON.parse(xhr.responseText);
+                //window.data = data;
+                //alert(formData);
+                globe.addData(formData, {format: 'legend'});
+                globe.createPoints();
+                globe.animate();
+                document.body.style.backgroundImage = 'none'; // remove loading
+              //}
+            //}
+          //};
+          //xhr.send(null);
+              }
+        </script>
+    </body>
+</html>

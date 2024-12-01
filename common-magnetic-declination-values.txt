@@ -1,0 +1,11 @@
+Mainland Japan: 8.03
+Okinawa: 5.65
+South Korea: 8.09
+Germany: 3.75
+North Carolina: 10.69
+San Deigo, Californa: 11.23
+San Angelo, Texas: 4.54
+San Antonio, Texas: 3.44
+Fort Walton, Florida: 3.98
+Darwin, Australia: 2.02
+Anchorage, Alaska: 15.28
